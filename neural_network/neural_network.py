@@ -6,11 +6,12 @@ from random import uniform
 class NeuralNetwork(object):
     "Neural network with feed forward and back propagation"
 
-    def __init__(self, topology, inputs, output, activation_scheme, weight_seed=None, custom_weights=None):
+    def __init__(self, topology, inputs, output, activation_scheme, learning_rate=1, weight_seed=None, custom_weights=None):
         self.topology = topology
         self.layers = self.__setup_layers(topology, inputs)
         self.weights = self.__setup_weights(topology, weight_seed, custom_weights)
         self.output = output
+        self.learning_rate = learning_rate
         self.activation_scheme = activation_scheme
 
         self.guess_list = list()
@@ -138,7 +139,7 @@ class NeuralNetwork(object):
         # print('Delta Weights: %s' % str(delta_w))
         delta_w_tr = delta_w.transpose()
 
-        new_weight = prev_weight - delta_w_tr
+        new_weight = prev_weight - (self.learning_rate *delta_w_tr)
 
         self.weights[-1] = new_weight
 
@@ -163,7 +164,7 @@ class NeuralNetwork(object):
             delta_w = layer_next_tr * gradients_h_activated
 
             original_weight = self.weights[-i]
-            new_weight = original_weight - delta_w
+            new_weight = original_weight - (self.learning_rate * delta_w)
 
             gradients_p = gradients_h_activated
             weights_p = original_weight
@@ -210,43 +211,6 @@ class NeuralNetwork(object):
 
 
 def main():
-    # print('Problem 1:')
-    # #Problem 1
-    # topology = [3, 2, 3, 2]
-    # inputs = [1, 0, 1]
-    # output = [1, 0]
-    # activation_scheme = ['Relu', 'Relu', 'Sigmoid']
-
-    # neural_net = NeuralNetwork(topology, inputs, output, activation_scheme)
-    # neural_net.train(2)
-    # neural_net.run('Problem 1')
-    
-    # print('\n')
-
-    # print('Problem 2')
-    # #Problem 2
-    # topology = [5, 4, 3, 2]
-    # inputs = [1, 0, 0.8, 0.9, 0.8]
-    # output = [1, 0]
-    # activation_scheme = ['Sigmoid', 'Sigmoid', 'Sigmoid']
-
-    # neural_net = NeuralNetwork(topology, inputs, output, activation_scheme)
-    # neural_net.train(2)
-    # neural_net.run('Problem 2')
-
-    # print('\n')
-
-    # print('Problem 3')
-    # #Problem 3
-    # topology = [5, 3, 2, 3, 5]
-    # inputs = [0.9, 0.8, 0.9, 0.2, 0.3]
-    # output = [0.9, 0.8, 0.9, 0.2, 0.3]
-    # activation_scheme = ['Relu', 'Relu', 'Relu', 'Relu']
-
-    # neural_net = NeuralNetwork(topology, inputs, output, activation_scheme)
-    # neural_net.train(2)
-    # neural_net.run('Problem 3')
-
     print('Problem 1:')
     #Problem 1
     topology = [4, 3, 4]
