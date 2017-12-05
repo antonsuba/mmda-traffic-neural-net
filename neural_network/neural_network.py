@@ -89,7 +89,7 @@ class NeuralNetwork(object):
     def feed_forward(self):
 
         def __compute_error_rate(guess, actual):
-            return (guess - actual) ** 2
+            return (guess - actual)
 
         for i in range(0, len(self.weights)):
             result_matrix = self.layers[i] * self.weights[i]
@@ -106,7 +106,7 @@ class NeuralNetwork(object):
         #Compute error rate
         error_rate_func = np.vectorize(__compute_error_rate)
         error_rate = error_rate_func(self.guess_list[-1], self.output)
-        print('Error rate: %s' % str(error_rate))
+        # print('Error rate: %s' % str(error_rate))
         self.error_list.append(error_rate)
 
         self.__generate_current_topology()
@@ -120,7 +120,9 @@ class NeuralNetwork(object):
         guess = self.guess_list[-1]
         error_rate = self.error_list[-1]
 
-        #First part of back propagation
+        #
+        # Output to Hidden back propagation
+        #
         prev_layer = self.layers[-2]
         prev_weight = self.weights[-1]
 
@@ -128,7 +130,7 @@ class NeuralNetwork(object):
         y_derivative_func = np.vectorize(self.derivative_functions[key])
         y_derivative = y_derivative_func(guess)
 
-        print('Y Derivative: %s' % str(y_derivative))
+        # print('Y Derivative: %s' % str(y_derivative))
 
         gradient_func = np.vectorize(__compute_gradient)
         gradients = gradient_func(y_derivative, error_rate)
@@ -139,12 +141,14 @@ class NeuralNetwork(object):
         # print('Delta Weights: %s' % str(delta_w))
         delta_w_tr = delta_w.transpose()
 
-        new_weight = prev_weight - (self.learning_rate *delta_w_tr)
+        new_weight = prev_weight - (self.learning_rate * delta_w_tr)
 
         self.weights[-1] = new_weight
 
 
-        #Second Part of back propagation
+        #
+        # Hidden - Hidden / Hidden - Input back propagation
+        #
         gradients_p = gradients
         weights_p = prev_weight
 
@@ -177,12 +181,12 @@ class NeuralNetwork(object):
     def train(self, epochs):
         for i in range(0, epochs):
             self.feed_forward()
-            print('Feed forward %i' % i)            
-            print(str(self.layers_with_weights))
+            # print('Feed forward %i' % i)            
+            # print(str(self.layers_with_weights))
 
             self.back_propagation()
-            print('Back propagation %i' % i)            
-            print(str(self.layers_with_weights))
+            # print('Back propagation %i' % i)            
+            # print(str(self.layers_with_weights))
 
 
     def run(self, label):
@@ -191,26 +195,14 @@ class NeuralNetwork(object):
         print(str(self.layers_with_weights))
         print('Final Guess:')
         print(str(self.guess_list[-1]))
-        print('Final Error rate')
+        print('Final Error Rate')
         print(str(self.error_list[-1]))
-
-        # print('Error rate list: %s' % str(self.error_list))
-
-        # with open('output.txt', 'w') as outfile:
-        #     outfile.write('# %s:' % label)
-
-        #     for i in range(0, len(self.layers_with_weights)):
-        #         if i % 2 == 0:
-        #             outfile.write('Layer:')
-        #         else:
-        #             outfile.write('Weight:')
-                
-        #         for data_slice in self.layers_with_weights[i]:
-        #             arr = np.array(data_slice)
-        #             np.savetxt(outfile, arr, fmt='%-7.5f')
+        print('Final Error Total')
+        print(np.sum(self.error_list[-1]))
 
 
 def main():
+    #Sample Usage
     print('Problem 1:')
     #Problem 1
     topology = [4, 3, 4]
@@ -229,8 +221,8 @@ def main():
 
     custom_weights = [weight_1, weight_2]
 
-    neural_net = NeuralNetwork(topology, inputs, output, activation_scheme, None, custom_weights)
-    neural_net.train(2)
+    neural_net = NeuralNetwork(topology, inputs, output, activation_scheme, custom_weights=custom_weights)
+    neural_net.train(600)
     neural_net.run('Problem 1')
 
 
