@@ -6,11 +6,12 @@ from random import uniform
 class NeuralNetwork(object):
     "Neural network with feed forward and back propagation"
 
-    def __init__(self, topology, inputs, output, activation_scheme, learning_rate=1, weight_seed=None, custom_weights=None):
+    def __init__(self, topology, activation_scheme, momentum=1, learning_rate=1, weight_seed=None, custom_weights=None):
         self.topology = topology
-        self.layers = self.__setup_layers(topology, inputs)
+        self.layers = self.__setup_layers(topology)
         self.weights = self.__setup_weights(topology, weight_seed, custom_weights)
-        self.output = output
+        # self.output = output
+        self.momentum = momentum
         self.learning_rate = learning_rate
         self.activation_scheme = activation_scheme
 
@@ -22,10 +23,10 @@ class NeuralNetwork(object):
         self.derivative_functions = self.__setup_derivative_functions()
 
 
-    def __setup_layers(self, topology, inputs):
+    def __setup_layers(self, topology):
         topos = [None for x in topology]
 
-        topos[0] = np.matrix([float(x) for x in inputs])
+        # topos[0] = np.matrix([float(x) for x in inputs])
         return topos
 
 
@@ -86,10 +87,13 @@ class NeuralNetwork(object):
         self.layers_with_weights = layers_with_weights
 
 
-    def feed_forward(self):
+    def feed_forward(self, inputs, output, activate_logging=False):
+        "Perform one feed forward pass"
 
         def __compute_error_rate(guess, actual):
             return (guess - actual)
+
+        self.layers[0] = np.matrix([float(x) for x in inputs])
 
         for i in range(0, len(self.weights)):
             result_matrix = self.layers[i] * self.weights[i]
@@ -105,20 +109,31 @@ class NeuralNetwork(object):
 
         #Compute error rate
         error_rate_func = np.vectorize(__compute_error_rate)
-        error_rate = error_rate_func(self.guess_list[-1], self.output)
+        error_rate = error_rate_func(self.guess_list[-1], output)
         # print('Error rate: %s' % str(error_rate))
         self.error_list.append(error_rate)
 
         self.__generate_current_topology()
 
+        if activate_logging:
+            # print(self.layers_with_weights)
+            print('Guess: %s' % self.guess_list[-1])
+            print('Actual %s' % output)
+            print('Error rate: %s' % error_rate)
 
-    def back_propagation(self):
+        return error_rate
+
+
+    def back_propagation(self, data_point, error_rate, activate_logging=False):
+        "Update weights using back prop"
 
         def __compute_gradient(y, error):
             return y * error
 
+        # self.layers[0] = np.matrix([float(x) for x in data_point])
+
         guess = self.guess_list[-1]
-        error_rate = self.error_list[-1]
+        # error_rate = self.error_list[-1]
 
         #
         # Output to Hidden back propagation
@@ -130,20 +145,21 @@ class NeuralNetwork(object):
         y_derivative_func = np.vectorize(self.derivative_functions[key])
         y_derivative = y_derivative_func(guess)
 
-        # print('Y Derivative: %s' % str(y_derivative))
-
         gradient_func = np.vectorize(__compute_gradient)
         gradients = gradient_func(y_derivative, error_rate)
-        # print('Gradients: %s' % str(gradients))
         gradients_tr = gradients.transpose()
 
         delta_w = gradients_tr * prev_layer
-        # print('Delta Weights: %s' % str(delta_w))
         delta_w_tr = delta_w.transpose()
 
-        new_weight = prev_weight - (self.learning_rate * delta_w_tr)
+        new_weight = (self.momentum * prev_weight) - (self.learning_rate * delta_w_tr)
 
         self.weights[-1] = new_weight
+
+        if activate_logging:
+            print('Y Derivative: %s' % str(y_derivative))
+            print('Gradients: %s' % str(gradients))
+            print('Delta Weights: %s' % str(delta_w))
 
 
         #
@@ -168,7 +184,7 @@ class NeuralNetwork(object):
             delta_w = layer_next_tr * gradients_h_activated
 
             original_weight = self.weights[-i]
-            new_weight = original_weight - (self.learning_rate * delta_w)
+            new_weight = (self.momentum * original_weight) - (self.learning_rate * delta_w)
 
             gradients_p = gradients_h_activated
             weights_p = original_weight
@@ -177,38 +193,64 @@ class NeuralNetwork(object):
 
         self.__generate_current_topology()
 
+        print(self.layers_with_weights)
 
-    def train(self, epochs):
+
+    def train(self, inputs, outputs, epochs=600, train_method='sequential'):
+        "Train neural net. Requires epoch count parameter"
+
+        def __sequential(inputs, outputs):
+            for data_point, actual in zip(inputs, outputs):
+                print(data_point)
+                error_rate = self.feed_forward(data_point, actual)
+                self.back_propagation(data_point, error_rate)
+                print('\n')
+
+        def __deferred_bp(inputs, outputs):
+            error_avg = 0
+            for data_point, actual in zip(inputs, outputs):
+                error_rate = self.feed_forward(data_point, actual)
+                error_avg += error_rate
+
+            error_avg = error_avg / len(inputs)
+
+            for data_point in inputs:
+                self.back_propagation(data_point, error_avg)
+                
+
+        train_methods = {
+            'sequential' : __sequential,
+            'deferred_bp' : __deferred_bp
+        }
+
+        train_func = train_methods[train_method]
+
         for i in range(0, epochs):
-            self.feed_forward()
-            # print('Feed forward %i' % i)            
-            # print(str(self.layers_with_weights))
-
-            self.back_propagation()
-            # print('Back propagation %i' % i)            
-            # print(str(self.layers_with_weights))
+            train_func(inputs, outputs)
 
 
-    def run(self, label):
-        self.feed_forward()
-        print('Final Feed Forward:')
+    def run(self, data_point, actual):
+        "Performs one feed forward pass with the trained neural net"
+
+        self.feed_forward(data_point, actual)
+        print('Feed Forward:')
         print(str(self.layers_with_weights))
-        print('Final Guess:')
+        print('Guess:')
         print(str(self.guess_list[-1]))
-        print('Final Error Rate')
+        print('Error Rate')
         print(str(self.error_list[-1]))
-        print('Final Error Total')
+        print('Error Total')
         print(np.sum(self.error_list[-1]))
 
 
 def main():
-    #Sample Usage
+    # Sample Usage
     print('Problem 1:')
     #Problem 1
     topology = [4, 3, 4]
-    inputs = [0.9, 0.5, 0.1, 0.3]
-    output = [0.9, 0.5, 0.1, 0.3]
-    activation_scheme = ['Relu', 'Sigmoid']
+    inputs = [[0.9, 0.5, 0.1, 0.3], [0.2, 0.6, 0.4, 0.1]]
+    output = [[0.9, 0.5, 0.1, 0.3], [0.2, 0.6, 0.4, 0.1]]
+    activation_scheme = ['Sigmoid', 'Sigmoid']
 
     weight_1 = np.matrix([[0.7863690559, 0.4975437665, 0.9521735073],
                           [0.5775275116, 0.2028151628, 0.7669216083],
@@ -221,9 +263,31 @@ def main():
 
     custom_weights = [weight_1, weight_2]
 
-    neural_net = NeuralNetwork(topology, inputs, output, activation_scheme, custom_weights=custom_weights)
-    neural_net.train(600)
-    neural_net.run('Problem 1')
+    neural_net = NeuralNetwork(topology, activation_scheme, custom_weights=custom_weights)
+    neural_net.train(inputs, output, epochs=750, train_method='sequential')
+    neural_net.run([0.9, 0.5, 0.1, 0.3], [0.9, 0.5, 0.1, 0.3])
+
+    # print('Problem 1:')
+    # #Problem 1
+    # topology = [3, 2, 3, 2]
+    # inputs = [[1, 0, 1], [0, 1, 1], [1, 0, 0]]
+    # output = [[0, 1], [1, 0], [1, 1]]
+    # activation_scheme = ['Relu', 'Relu', 'Sigmoid']
+
+    # weight_1 = np.matrix([[0.7863690559, 0.4975437665, 0.9521735073],
+    #                       [0.5775275116, 0.2028151628, 0.7669216083],
+    #                       [0.07380019736, 0.4244236388, 0.1051142052],
+    #                       [0.05272444907, 0.9716144298, 0.4978612697]])
+
+    # weight_2 = np.matrix([[0.8641701841, 0.7390354543, 0.5996454166, 0.4113275868],
+    #                       [0.890385264, 0.9254203403, 0.5906074863, 0.3691760936],
+    #                       [0.5945421458, 0.7382485887, 0.6031191925, 0.6168419889]])
+
+    # custom_weights = [weight_1, weight_2]
+
+    # neural_net = NeuralNetwork(topology, activation_scheme, weight_seed=0.2)
+    # neural_net.train(inputs, output, epochs=1000, train_method='sequential')
+    # neural_net.run([0, 1, 1], [1, 0])
 
 
 if __name__ == "__main__":
