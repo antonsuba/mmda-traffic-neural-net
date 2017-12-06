@@ -124,15 +124,18 @@ class NeuralNetwork(object):
         return error_rate
 
 
-    def back_propagation(self, data_point, error_rate, activate_logging=False):
+    def back_propagation(self, data_point, error_rate, guess_pointer=-1, activate_logging=False):
         "Update weights using back prop"
 
         def __compute_gradient(y, error):
             return y * error
 
-        # self.layers[0] = np.matrix([float(x) for x in data_point])
+        self.layers[0] = np.matrix([float(x) for x in data_point])
 
-        guess = self.guess_list[-1]
+        guess = self.guess_list[guess_pointer]
+        # print(guess_pointer)
+        # print(guess)
+        # print(self.guess_list)
         # error_rate = self.error_list[-1]
 
         #
@@ -193,7 +196,7 @@ class NeuralNetwork(object):
 
         self.__generate_current_topology()
 
-        print(self.layers_with_weights)
+        # print(self.layers_with_weights)
 
 
     def train(self, inputs, outputs, epochs=600, train_method='sequential'):
@@ -201,22 +204,27 @@ class NeuralNetwork(object):
 
         def __sequential(inputs, outputs):
             for data_point, actual in zip(inputs, outputs):
-                print(data_point)
+                # print(data_point)
                 error_rate = self.feed_forward(data_point, actual)
                 self.back_propagation(data_point, error_rate)
-                print('\n')
+                # print('\n')
 
         def __deferred_bp(inputs, outputs):
             error_avg = 0
             for data_point, actual in zip(inputs, outputs):
                 error_rate = self.feed_forward(data_point, actual)
+                # print(error_rate)
                 error_avg += error_rate
 
+            # print(error_avg)
             error_avg = error_avg / len(inputs)
+            # print(error_avg)
 
+            guess_pointer = -1
             for data_point in inputs:
-                self.back_propagation(data_point, error_avg)
-                
+                self.back_propagation(data_point, error_avg, guess_pointer=guess_pointer)
+                guess_pointer = guess_pointer - 1
+                # print('\n')
 
         train_methods = {
             'sequential' : __sequential,
@@ -264,15 +272,15 @@ def main():
     custom_weights = [weight_1, weight_2]
 
     neural_net = NeuralNetwork(topology, activation_scheme, custom_weights=custom_weights)
-    neural_net.train(inputs, output, epochs=750, train_method='sequential')
+    neural_net.train(inputs, output, epochs=1000, train_method='deferred_bp')
     neural_net.run([0.9, 0.5, 0.1, 0.3], [0.9, 0.5, 0.1, 0.3])
 
     # print('Problem 1:')
     # #Problem 1
-    # topology = [3, 2, 3, 2]
-    # inputs = [[1, 0, 1], [0, 1, 1], [1, 0, 0]]
-    # output = [[0, 1], [1, 0], [1, 1]]
-    # activation_scheme = ['Relu', 'Relu', 'Sigmoid']
+    # topology = [4, 2, 3]
+    # inputs = [[1, 0, 1, 0]]
+    # output = [[1, 0, 0]]
+    # activation_scheme = ['Relu', 'Relu']
 
     # weight_1 = np.matrix([[0.7863690559, 0.4975437665, 0.9521735073],
     #                       [0.5775275116, 0.2028151628, 0.7669216083],
@@ -286,8 +294,8 @@ def main():
     # custom_weights = [weight_1, weight_2]
 
     # neural_net = NeuralNetwork(topology, activation_scheme, weight_seed=0.2)
-    # neural_net.train(inputs, output, epochs=1000, train_method='sequential')
-    # neural_net.run([0, 1, 1], [1, 0])
+    # neural_net.train(inputs, output, epochs=500, train_method='sequential')
+    # neural_net.run([1, 0, 1, 0], [1, 0, 0])
 
 
 if __name__ == "__main__":
