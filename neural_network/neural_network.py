@@ -272,7 +272,7 @@ def main():
     custom_weights = [weight_1, weight_2]
 
     neural_net = NeuralNetwork(topology, activation_scheme, custom_weights=custom_weights)
-    neural_net.train(inputs, output, epochs=1000, train_method='deferred_bp')
+    neural_net.train(inputs, output, epochs=1000, train_method='sequential')
     neural_net.run([0.9, 0.5, 0.1, 0.3], [0.9, 0.5, 0.1, 0.3])
 
     # print('Problem 1:')
