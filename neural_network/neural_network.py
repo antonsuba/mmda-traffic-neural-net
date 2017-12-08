@@ -17,6 +17,7 @@ class NeuralNetwork(object):
 
         self.guess_list = list()
         self.error_list = list()
+        self.overall_error_list = list()
         self.layers_with_weights = list()
 
         self.activation_functions = self.__setup_activation_functions()
@@ -203,13 +204,19 @@ class NeuralNetwork(object):
         "Train neural net. Requires epoch count parameter"
 
         def __sequential(inputs, outputs):
+            overall_error = 0
+
             for data_point, actual in zip(inputs, outputs):
-                # print(data_point)
                 error_rate = self.feed_forward(data_point, actual)
                 self.back_propagation(data_point, error_rate)
-                # print('\n')
+                overall_error += error_rate
 
-        def __deferred_bp(inputs, outputs):
+            overall_error = np.sum(overall_error) / len(inputs)
+            self.overall_error_list.append(overall_error)
+
+            print('Overall error rate: %s' % str(overall_error))
+
+        def __deferred_bp(inputs, outputs, epoch):
             error_avg = 0
             for data_point, actual in zip(inputs, outputs):
                 error_rate = self.feed_forward(data_point, actual)
@@ -234,6 +241,7 @@ class NeuralNetwork(object):
         train_func = train_methods[train_method]
 
         for i in range(0, epochs):
+            print('Epoch %i' % i)
             train_func(inputs, outputs)
 
 
@@ -272,7 +280,7 @@ def main():
     custom_weights = [weight_1, weight_2]
 
     neural_net = NeuralNetwork(topology, activation_scheme, custom_weights=custom_weights)
-    neural_net.train(inputs, output, epochs=1000, train_method='sequential')
+    neural_net.train(inputs, output, epochs=600, train_method='sequential')
     neural_net.run([0.9, 0.5, 0.1, 0.3], [0.9, 0.5, 0.1, 0.3])
 
     # print('Problem 1:')
