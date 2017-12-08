@@ -63,10 +63,10 @@ features_len = len(data_arr[0])
 latent_len = features_len - 2
 topology = [features_len, latent_len, features_len]
 
-neural_net = net.NeuralNetwork(topology, activation_scheme)
+class_one_encoder = net.NeuralNetwork(topology, activation_scheme)
 
-neural_net.train(data_arr, data_arr, epochs=300)
-neural_net.run(data_arr[1], data_arr[1])
+class_one_encoder.train(data_arr, data_arr, epochs=300)
+class_one_encoder.run(data_arr[1], data_arr[1])
 
 #Classification 2 Auto Encoder
 data_arr = class_two_df.values
@@ -75,10 +75,10 @@ features_len = len(data_arr[0])
 latent_len = features_len - 2
 topology = [features_len, latent_len, features_len]
 
-neural_net = net.NeuralNetwork(topology, activation_scheme)
+class_two_encoder = net.NeuralNetwork(topology, activation_scheme)
 
-neural_net.train(data_arr, data_arr, epochs=300)
-neural_net.run(data_arr[1], data_arr[1])
+class_two_encoder.train(data_arr, data_arr, epochs=300)
+class_two_encoder.run(data_arr[1], data_arr[1])
 
 #Classification 3 Auto Encoder
 data_arr = class_three_df.values
@@ -87,10 +87,12 @@ features_len = len(data_arr[0])
 latent_len = features_len - 2
 topology = [features_len, latent_len, features_len]
 
-neural_net = net.NeuralNetwork(topology, activation_scheme)
+class_three_encoder = net.NeuralNetwork(topology, activation_scheme)
 
-neural_net.train(data_arr, data_arr, epochs=300)
-neural_net.run(data_arr[1], data_arr[1])
+class_three_encoder.train(data_arr, data_arr, epochs=300)
+class_three_encoder.run(data_arr[1], data_arr[1])
 
 # print('Latent Layers: %s' % str(neural_net.latent_layers))
-# print(str(data_arr))
+
+# Experiment B Classification Neural Net
+latent_layers = class_one_encoder.latent_layers + class_two_encoder.latent_layers + class_three_encoder.latent_layers
