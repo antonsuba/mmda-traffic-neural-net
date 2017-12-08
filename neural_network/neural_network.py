@@ -18,6 +18,7 @@ class NeuralNetwork(object):
         self.guess_list = list()
         self.error_list = list()
         self.overall_error_list = list()
+        self.latent_layers = list()
         self.layers_with_weights = list()
 
         self.activation_functions = self.__setup_activation_functions()
@@ -92,7 +93,7 @@ class NeuralNetwork(object):
         "Perform one feed forward pass"
 
         def __compute_error_rate(guess, actual):
-            return (guess - actual) ** 2
+            return (guess - actual)
 
         self.layers[0] = np.matrix([float(x) for x in inputs])
 
@@ -124,7 +125,7 @@ class NeuralNetwork(object):
         return error_rate
 
 
-    def back_propagation(self, data_point, error_rate, guess_pointer=-1, activate_logging=False):
+    def back_propagation(self, data_point, error_rate, dp_counter, guess_pointer=-1, activate_logging=False):
         "Update weights using back prop"
 
         def __compute_gradient(y, error):
@@ -155,12 +156,6 @@ class NeuralNetwork(object):
 
         self.weights[-1] = new_weight
 
-        if activate_logging:
-            print('Y Derivative: %s' % str(y_derivative))
-            print('Gradients: %s' % str(gradients))
-            print('Delta Weights: %s' % str(delta_w))
-
-
         #
         # Hidden - Hidden / Hidden - Input back propagation
         #
@@ -190,9 +185,12 @@ class NeuralNetwork(object):
 
             self.weights[-i] = new_weight
 
-        self.__generate_current_topology()
+            try:
+                self.latent_layers[dp_counter] = layer
+            except IndexError:
+                self.latent_layers.append(layer)
 
-        # print(self.layers_with_weights)
+        self.__generate_current_topology()
 
 
     def train(self, inputs, outputs, epochs=600, train_method='sequential'):
@@ -201,15 +199,18 @@ class NeuralNetwork(object):
         def __sequential(inputs, outputs):
             overall_error = 0
 
+            dp_counter = 0
             for data_point, actual in zip(inputs, outputs):
                 error_rate = self.feed_forward(data_point, actual)
-                self.back_propagation(data_point, error_rate)
+                self.back_propagation(data_point, error_rate, dp_counter)
+
                 overall_error += error_rate
+                dp_counter += 1
 
             overall_error = np.sum(overall_error) / len(inputs)
             self.overall_error_list.append(overall_error)
 
-            print('Overall error rate: %s' % str(overall_error))
+            # print('Overall error rate: %s' % str(overall_error))
 
         def __deferred_bp(inputs, outputs, epoch):
             error_avg = 0
@@ -236,7 +237,7 @@ class NeuralNetwork(object):
         train_func = train_methods[train_method]
 
         for i in range(0, epochs):
-            print('Epoch %i' % i)
+            # print('Epoch %i' % i)
             train_func(inputs, outputs)
 
 

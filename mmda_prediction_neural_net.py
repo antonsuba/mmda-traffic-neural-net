@@ -54,6 +54,8 @@ class_three_df = class_three_df.drop('Classification', axis=1)
 df_values_arr = [class_one_df.values, class_two_df.values, class_three_df.values]
 
 #Create and train autoencoder model for each dataset partition
+activation_scheme = ['Sigmoid', 'Sigmoid']
+
 #Classification 1 Auto Encoder
 data_arr = class_one_df.values
 
@@ -61,9 +63,34 @@ features_len = len(data_arr[0])
 latent_len = features_len - 2
 topology = [features_len, latent_len, features_len]
 
-activation_scheme = ['Sigmoid', 'Sigmoid']
+neural_net = net.NeuralNetwork(topology, activation_scheme)
+
+neural_net.train(data_arr, data_arr, epochs=300)
+neural_net.run(data_arr[1], data_arr[1])
+
+#Classification 2 Auto Encoder
+data_arr = class_two_df.values
+
+features_len = len(data_arr[0])
+latent_len = features_len - 2
+topology = [features_len, latent_len, features_len]
 
 neural_net = net.NeuralNetwork(topology, activation_scheme)
 
-neural_net.train(data_arr, data_arr, epochs=1500)
-neural_net.run(data_arr[0], data_arr[0])
+neural_net.train(data_arr, data_arr, epochs=300)
+neural_net.run(data_arr[1], data_arr[1])
+
+#Classification 3 Auto Encoder
+data_arr = class_three_df.values
+
+features_len = len(data_arr[0])
+latent_len = features_len - 2
+topology = [features_len, latent_len, features_len]
+
+neural_net = net.NeuralNetwork(topology, activation_scheme)
+
+neural_net.train(data_arr, data_arr, epochs=300)
+neural_net.run(data_arr[1], data_arr[1])
+
+# print('Latent Layers: %s' % str(neural_net.latent_layers))
+# print(str(data_arr))
