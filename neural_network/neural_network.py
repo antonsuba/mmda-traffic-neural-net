@@ -92,7 +92,7 @@ class NeuralNetwork(object):
         "Perform one feed forward pass"
 
         def __compute_error_rate(guess, actual):
-            return (guess - actual)
+            return (guess - actual) ** 2
 
         self.layers[0] = np.matrix([float(x) for x in inputs])
 
@@ -117,7 +117,6 @@ class NeuralNetwork(object):
         self.__generate_current_topology()
 
         if activate_logging:
-            # print(self.layers_with_weights)
             print('Guess: %s' % self.guess_list[-1])
             print('Actual %s' % output)
             print('Error rate: %s' % error_rate)
@@ -134,10 +133,6 @@ class NeuralNetwork(object):
         self.layers[0] = np.matrix([float(x) for x in data_point])
 
         guess = self.guess_list[guess_pointer]
-        # print(guess_pointer)
-        # print(guess)
-        # print(self.guess_list)
-        # error_rate = self.error_list[-1]
 
         #
         # Output to Hidden back propagation

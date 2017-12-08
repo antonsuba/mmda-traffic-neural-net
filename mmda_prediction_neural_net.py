@@ -9,12 +9,29 @@ TRAIN_DATA_Y = 'data/y_train.csv'
 TEST_DATA_X = 'data/x_test.csv'
 TEST_DATA_Y = 'data/y_test.csv'
 
+NORMALIZE_COLUMNS = ['NumDeath', 'NumInjured', 'NumVehInteraction']
+
+def normalize_df(df_base, columns):
+    df = df_base.copy()
+    for column in columns:
+        df[column] = normalize_max_unknown(df[column])
+    
+    return df
+
+def normalize_max_unknown(vector):
+    min = np.min(vector)
+    max = np.max(vector)
+        
+    return [(x - float(min)) / (float(max) - float(min)) for x in vector]
+
 train_x_df = pd.read_csv(TRAIN_DATA_X)
 train_y_df = pd.read_csv(TRAIN_DATA_Y)
 
 df_y = train_y_df['Classification']
 df_x = train_x_df[['NumDeath', 'NumInjured', 'NumPedestrianVictim', 'NumVehInteraction', 'PassengerInjured',
                    'PassengerKilled', 'PedestrianInjured','PedestrianKilled','DriversInjured','DriversKilled']]
+
+df_x = normalize_df(df_x, NORMALIZE_COLUMNS)
 
 dataset_df = pd.concat([df_x, df_y], axis=1)
 
@@ -37,14 +54,16 @@ class_three_df = class_three_df.drop('Classification', axis=1)
 df_values_arr = [class_one_df.values, class_two_df.values, class_three_df.values]
 
 #Create and train autoencoder model for each dataset partition
-for data_arr in df_values_arr:
-    features_len = len(data_arr[0])
-    latent_len = features_len - 6
-    topology = [features_len, latent_len, features_len]
+#Classification 1 Auto Encoder
+data_arr = class_one_df.values
 
-    activation_scheme = ['Sigmoid', 'Sigmoid']
+features_len = len(data_arr[0])
+latent_len = features_len - 2
+topology = [features_len, latent_len, features_len]
 
-    neural_net = net.NeuralNetwork(topology, activation_scheme)
+activation_scheme = ['Sigmoid', 'Sigmoid']
 
-    neural_net.train(data_arr, data_arr, epochs=600)
-    neural_net.run(data_arr[2],data_arr[2])
+neural_net = net.NeuralNetwork(topology, activation_scheme)
+
+neural_net.train(data_arr, data_arr, epochs=1500)
+neural_net.run(data_arr[0], data_arr[0])
